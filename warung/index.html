@@ -1,0 +1,403 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Warung Zaki</title>
+  <style>
+    :root{
+      --orange:#2e1bff;
+      --muted:#101010;
+      --card:#ffffff;
+      --bg:#f3f4f6;
+      --shadow: 0 6px 18px rgba(15,23,42,0.08);
+      --radius:14px;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--bg);color:#0f172a}
+    /* header */
+    .header{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;background:#fff;box-shadow:var(--shadow);position:sticky;top:0;z-index:40}
+    .brand{display:flex;align-items:center;gap:12px}
+    .logo{width:44px;height:44px;border-radius:10px;background:linear-gradient(135deg,var(--orange),#ffb36b);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:16px}
+    .title{font-size:18px;font-weight:700;color:var(--orange)}
+    .nav-actions{display:flex;gap:12px;align-items:center}
+    .cart-btn{position:relative;width:44px;height:44px;border-radius:10px;background:#fff;border:1px solid #eee;display:flex;align-items:center;justify-content:center;cursor:pointer}
+    .badge{position:absolute;right:-6px;top:-6px;background:#ef4444;color:#fff;border-radius:999px;padding:2px 6px;font-size:12px;font-weight:700;box-shadow:0 3px 8px rgba(0,0,0,0.12)}
+    /* content */
+    .container{max-width:1100px;margin:28px auto;padding:0 18px}
+    .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:18px}
+    .card{background:var(--card);border-radius:12px;padding:14px;box-shadow:var(--shadow);display:flex;flex-direction:column;align-items:center;gap:12px}
+    .product-img{width:140px;height:120px;object-fit:contain;background:#f9fafb;border-radius:8px;padding:8px}
+    .p-name{text-align:center;font-weight:600}
+    .p-price{color:var(--orange);font-weight:800}
+    .btn{background:var(--orange);color:white;padding:8px 12px;border-radius:10px;border:none;cursor:pointer;font-weight:700}
+    .btn:active{transform:translateY(1px)}
+    /* cart modal */
+    .overlay{position:fixed;inset:0;background:rgba(2,6,23,0.45);display:none;align-items:center;justify-content:flex-end;z-index:60}
+    .overlay.show{display:flex}
+    .cart-panel{width:420px;max-width:95%;height:100vh;background:#fff;padding:18px;overflow:auto;box-shadow: -10px 0 30px rgba(2,6,23,0.12)}
+    .cart-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+    .cart-list{display:flex;flex-direction:column;gap:12px}
+    .cart-item{display:flex;gap:12px;align-items:center;border-radius:10px;padding:8px;background:#fbfbfc}
+    .cart-item img{width:64px;height:64px;object-fit:contain;border-radius:8px;background:#fff;padding:6px}
+    .qty{display:flex;align-items:center;gap:8px}
+    .small{font-size:13px;color:var(--muted)}
+    .total{font-weight:800;font-size:18px;color:#0f172a;margin-top:8px}
+    .addr{display:flex;flex-direction:column;gap:8px;margin-top:16px}
+    .input, textarea{padding:10px;border-radius:8px;border:1px solid #e6e9ef;font-size:14px;outline:none}
+    textarea{min-height:80px;resize:vertical}
+    .ghost{background:#f8fafb;border:1px dashed #e6eef9;color:#111;padding:10px;border-radius:8px}
+    .muted{color:var(--muted)}
+    .empty-cart{display:flex;flex-direction:column;align-items:center;gap:8px;padding:40px 12px}
+    .link-like{background:transparent;border:none;color:var(--orange);cursor:pointer;font-weight:700}
+    .remove{background:transparent;border:none;color:#3d79fa;cursor:pointer}
+    /* responsive */
+    @media (max-width:640px){
+      .cart-panel{width:100%}
+      .grid{grid-template-columns:repeat(2,1fr)}
+    }
+  </style>
+</head>
+<body>
+
+  <header class="header">
+    <div class="brand">
+      <div class="logo">Z</div>
+      <div>
+        <div class="title">Warung Zaki</div>
+        <div class="small muted">Sembako & kebutuhan sehari-hari</div>
+      </div>
+    </div>
+
+    <div class="nav-actions">
+      <!-- simple user icon placeholder (we skip login) -->
+      <!-- Cart button -->
+      <button id="openCart" class="cart-btn" title="Keranjang">
+        <!-- shopping cart SVG -->
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#111" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6h15l-1.5 9h-13z"/><circle cx="9" cy="20" r="1"/><circle cx="19" cy="20" r="1"/></svg>
+        <span id="cartBadge" class="badge" style="display:none">0</span>
+      </button>
+    </div>
+  </header>
+
+  <main class="container">
+    <h2 style="margin:0 0 12px 0;font-size:20px">Produk Tersedia</h2>
+
+    <div class="grid" id="productsGrid">
+      <!-- products injected by JS -->
+    </div>
+  </main>
+
+  <!-- Cart overlay / panel -->
+  <div id="overlay" class="overlay" aria-hidden="true">
+    <div class="cart-panel" role="dialog" aria-modal="true">
+      <div class="cart-head">
+        <div>
+          <div style="font-weight:800">Keranjang Belanja</div>
+          <div class="small muted" id="cartCountText">0 barang</div>
+        </div>
+        <div>
+          <button id="closeCart" class="link-like">Tutup ✕</button>
+        </div>
+      </div>
+
+      <div id="cartContent">
+        <!-- will render empty state or list -->
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    // === sample product data (you can add more) ===
+    const PRODUCTS = [
+      { id: 1, name: "Beras 5kg", price: 65000, img: "beras.jpg" },
+      { id: 2, name: "Minyak Goreng 1L", price: 20000, img: "minyak goreng.jpg" },
+      { id: 3, name: "Gula Pasir 1kg", price: 15000, img: "gula.jpg" },
+      { id: 4, name: "Indomie Goreng", price: 3500, img: "indomie.jpg" },
+      { id: 5, name: "Kopi Kapal Api Sachet", price: 2500, img: "kopi kapal api.jpg" },
+      { id: 6, name: "Teh Kotak 300ml", price: 5000, img: "teh kotak.jpg" },
+      { id: 7, name: "Telur Ayam 1kg", price: 28000, img: "telur.jpg" },
+      { id: 8, name: "Sabun Mandi Lifebuoy", price: 6000, img: "sabun lifebuoy.jpg" },
+      { id: 9, name: "Shampoo Sunsilk Sachet", price: 1500, img: "shampo sunsilk.jpg" },
+      { id: 10, name: "Aqua Botol 600ml", price: 4000, img: "aqua.jpg" }
+    ];
+
+    // === helpers ===
+    const $ = sel => document.querySelector(sel);
+    const formatRupiah = n => 'Rp ' + n.toLocaleString('id-ID');
+
+    // cart structure: array of {id, qty}
+    let cart = JSON.parse(localStorage.getItem('warung_cart') || '[]');
+
+    // === render products grid ===
+    const productsGrid = $('#productsGrid');
+    function renderProducts(){
+      productsGrid.innerHTML = '';
+      for(const p of PRODUCTS){
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.innerHTML = `
+          <img src="${p.img}" alt="${escapeHtml(p.name)}" class="product-img" />
+          <div style="flex:1">
+            <div class="p-name">${escapeHtml(p.name)}</div>
+            <div class="p-price">${formatRupiah(p.price)}</div>
+          </div>
+          <button class="btn" data-id="${p.id}">Tambah</button>
+        `;
+        productsGrid.appendChild(card);
+      }
+      // attach events
+      document.querySelectorAll('.card .btn').forEach(btn=>{
+        btn.addEventListener('click', e=>{
+          const id = Number(e.currentTarget.dataset.id);
+          addToCart(id);
+        });
+      });
+    }
+
+    // === cart functions ===
+    function saveCart(){
+      localStorage.setItem('warung_cart', JSON.stringify(cart));
+    }
+    function findItem(id){
+      return cart.find(it => it.id === id);
+    }
+    function addToCart(id){
+      const item = findItem(id);
+      if(item) item.qty += 1;
+      else cart.push({id, qty:1});
+      saveCart();
+      renderBadge();
+      renderCartPanel();
+    }
+    function removeFromCart(id){
+      cart = cart.filter(it=>it.id!==id);
+      saveCart();
+      renderBadge();
+      renderCartPanel();
+    }
+    function changeQty(id, delta){
+      const it = findItem(id);
+      if(!it) return;
+      it.qty += delta;
+      if(it.qty <= 0) removeFromCart(id);
+      else {
+        saveCart();
+        renderBadge();
+        renderCartPanel();
+      }
+    }
+    function cartTotalCount(){
+      return cart.reduce((s,it)=>s+it.qty,0);
+    }
+    function cartTotalPrice(){
+      return cart.reduce((s,it)=>{
+        const p = PRODUCTS.find(x=>x.id===it.id);
+        return s + (p ? p.price * it.qty : 0);
+      },0);
+    }
+
+    // === UI: badge and panel ===
+    const overlay = $('#overlay');
+    const openCartBtn = $('#openCart');
+    const closeCartBtn = $('#closeCart');
+    const cartBadge = $('#cartBadge');
+    const cartCountText = $('#cartCountText');
+    const cartContent = $('#cartContent');
+
+    function renderBadge(){
+      const count = cartTotalCount();
+      cartBadge.textContent = count;
+      if(count > 0) cartBadge.style.display = 'inline-block';
+      else cartBadge.style.display = 'none';
+      cartCountText.textContent = `${count} barang`;
+    }
+
+    function renderCartPanel(){
+      const count = cartTotalCount();
+      if(count === 0){
+        cartContent.innerHTML = `
+          <div class="empty-cart">
+            <svg width="96" height="96" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" stroke-width="1.5"><path d="M6 6h15l-1.5 9h-13z"/><circle cx="9" cy="20" r="1"/><circle cx="19" cy="20" r="1"/></svg>
+            <div style="font-weight:700">Keranjang kosong</div>
+            <div class="small muted">Tambahkan barang yang ingin kamu beli</div>
+            <button onclick="closeCart()" class="btn" style="margin-top:12px">Kembali Belanja</button>
+          </div>
+        `;
+        return;
+      }
+
+      // build list
+      const parts = [];
+      parts.push('<div class="cart-list">');
+      for(const it of cart){
+        const p = PRODUCTS.find(x=>x.id===it.id);
+        if(!p) continue;
+        parts.push(`
+          <div class="cart-item">
+            <img src="${p.img}" alt="${escapeHtml(p.name)}" />
+            <div style="flex:1">
+              <div style="font-weight:700">${escapeHtml(p.name)}</div>
+              <div class="small muted">${formatRupiah(p.price)}</div>
+              <div style="margin-top:8px" class="qty">
+                <button class="link-like" data-action="dec" data-id="${p.id}">-</button>
+                <span class="small"> ${it.qty} </span>
+                <button class="link-like" data-action="inc" data-id="${p.id}">+</button>
+                <button class="remove" data-action="rem" data-id="${p.id}" style="margin-left:12px">Hapus</button>
+              </div>
+            </div>
+            <div style="text-align:right">
+              <div style="font-weight:800">${formatRupiah(p.price * it.qty)}</div>
+            </div>
+          </div>
+        `);
+      }
+      parts.push('</div>'); // cart-list
+
+      // order summary + address form
+      parts.push(`
+        <div style="margin-top:14px" class="ghost">
+          <div style="font-weight:700">Ringkasan Pesanan</div>
+          <div class="small muted">Subtotal: ${formatRupiah(cartTotalPrice())}</div>
+        </div>
+
+        <div class="addr">
+          <div style="font-weight:700;margin-top:8px">Alamat Pengiriman</div>
+          <input id="inpName" class="input" placeholder="Nama penerima (contoh: Budi Santoso)">
+          <input id="inpPhone" class="input" placeholder="Nomor HP (contoh: 0812xxxx)">
+          <textarea id="inpAddress" class="input" placeholder="Alamat lengkap (jalan, RT/RW, kel, kec, kota)"></textarea>
+          <input id="inpPost" class="input" placeholder="Kode pos (opsional)">
+        </div>
+
+        <div style="margin-top:12px;display:flex;gap:8px;align-items:center;justify-content:space-between">
+          <div>
+            <div class="small muted">Pembayaran</div>
+            <div style="font-weight:700">COD (Bayar di tempat)</div>
+          </div>
+          <div>
+            <button id="btnCheckout" class="btn">Pesan Sekarang (COD)</button>
+          </div>
+        </div>
+      `);
+
+      cartContent.innerHTML = parts.join('');
+      // attach button events within cart
+      cartContent.querySelectorAll('[data-action]').forEach(b=>{
+        b.addEventListener('click', e=>{
+          const id = Number(e.currentTarget.dataset.id);
+          const action = e.currentTarget.dataset.action;
+          if(action === 'inc') changeQty(id, +1);
+          if(action === 'dec') changeQty(id, -1);
+          if(action === 'rem') removeFromCart(id);
+        });
+      });
+
+      const checkoutBtn = $('#btnCheckout');
+      checkoutBtn.addEventListener('click', handleCheckout);
+    }
+
+    function handleCheckout(){
+      const name = $('#inpName').value.trim();
+      const phone = $('#inpPhone').value.trim();
+      const address = $('#inpAddress').value.trim();
+      // simple validation
+      if(!name || !phone || !address){
+        alert('Lengkapi nama, nomor HP, dan alamat pengiriman terlebih dahulu.');
+        return;
+      }
+      // simulate order creation
+      const order = {
+        id: 'ORD' + Date.now(),
+        items: cart.slice(),
+        total: cartTotalPrice(),
+        customer: { name, phone, address, post: $('#inpPost').value.trim() },
+        payment: 'COD',
+        status: 'Belum Dikirim',
+        createdAt: new Date().toISOString()
+      };
+      function handleCheckout(){
+  const name = $('#inpName').value.trim();
+  const phone = $('#inpPhone').value.trim();
+  const address = $('#inpAddress').value.trim();
+  
+  if(!name || !phone || !address){
+    alert('Lengkapi nama, nomor HP, dan alamat pengiriman terlebih dahulu.');
+    return;
+  }
+
+  const order = {
+    id: 'ORD' + Date.now(),
+    items: cart.slice(),
+    total: cartTotalPrice(),
+    customer: { name, phone, address, post: $('#inpPost').value.trim() },
+    payment: 'COD',
+    status: 'Belum Dikirim',
+    createdAt: new Date().toISOString()
+  };
+
+  // 🔽 Nah, disini kamu tambahin fetch() ke URL Google Script 🔽
+  fetch("https://script.google.com/macros/s/AKfycbyMcu4-ME73AclrQ0Dgu6CZ9rJfYlWu5CVDBwIliom5iCEtdWG79-fBhf24eKnvkRQB/exec", {
+    method: "POST",
+    body: JSON.stringify(order),
+    headers: {
+      "Content-Type": "application/json"
+    }
+  })
+  .then(res => res.text())
+  .then(data => {
+    console.log("Respon dari Google Sheets:", data);
+  })
+  .catch(err => {
+    console.error("Gagal kirim ke Google Sheets:", err);
+  });
+
+  // lanjutkan script lama kamu
+  alert('Pesanan berhasil dibuat! Kode pesanan: ' + order.id + '\nKurir akan menghubungi Anda.');
+  cart = [];
+  saveCart();
+  renderBadge();
+  renderCartPanel();
+  closeCart();
+}
+
+      // here you'd normally send 'order' to backend. We just log and clear.
+      console.log('Order created (simulated):', order);
+      alert('Pesanan berhasil dibuat! Kode pesanan: ' + order.id + '\\nKurir akan menghubungi Anda. Bayar saat barang diterima (COD).');
+      cart = [];
+      saveCart();
+      renderBadge();
+      renderCartPanel();
+      closeCart();
+    }
+
+    // open/close cart
+    function openCart(){ overlay.classList.add('show'); overlay.setAttribute('aria-hidden','false'); renderCartPanel(); }
+    function closeCart(){ overlay.classList.remove('show'); overlay.setAttribute('aria-hidden','true'); }
+
+    // click outside panel to close
+    overlay.addEventListener('click', (e)=>{
+      if(e.target === overlay) closeCart();
+    });
+    openCartBtn.addEventListener('click', openCart);
+    closeCartBtn.addEventListener('click', closeCart);
+
+    // escape key closes
+    document.addEventListener('keydown', e=>{
+      if(e.key === 'Escape') closeCart();
+    });
+
+    // simple XSS-avoid helper for product names
+    function escapeHtml(s){ return String(s).replace(/[&<>"']/g, function(m){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]; }); }
+
+    // initial render
+    renderProducts();
+    renderBadge();
+
+    // Expose functions for inline buttons
+    window.closeCart = closeCart;
+    window.addToCart = addToCart;
+  </script>
+</body>
+</html>
