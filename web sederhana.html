@@ -1,0 +1,107 @@
+<!DOCTYPE html><html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Manajemen Toko</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 font-sans">
+  <div class="flex h-screen">
+    <!-- Sidebar -->
+    <aside class="w-64 bg-white shadow-lg p-5">
+      <h1 class="text-xl font-bold mb-6">Toko App</h1>
+      <nav class="space-y-2">
+        <button onclick="showPage('dashboard')" class="w-full text-left p-2 rounded hover:bg-gray-200">Dashboard</button>
+        <button onclick="showPage('barang')" class="w-full text-left p-2 rounded hover:bg-gray-200">Data Barang</button>
+        <button onclick="showPage('transaksi')" class="w-full text-left p-2 rounded hover:bg-gray-200">Transaksi</button>
+      </nav>
+    </aside><!-- Main -->
+<main class="flex-1 p-6 overflow-auto">
+  <!-- Dashboard -->
+  <div id="dashboard">
+    <h2 class="text-2xl font-bold mb-4">Dashboard</h2>
+    <div class="grid grid-cols-3 gap-4">
+      <div class="bg-white p-4 rounded-2xl shadow">Pemasukan: <span id="income">0</span></div>
+      <div class="bg-white p-4 rounded-2xl shadow">Pengeluaran: <span id="expense">0</span></div>
+      <div class="bg-white p-4 rounded-2xl shadow">Total Stok: <span id="stock">0</span></div>
+    </div>
+  </div>
+
+  <!-- Barang -->
+  <div id="barang" class="hidden">
+    <h2 class="text-2xl font-bold mb-4">Data Barang</h2>
+    <div class="bg-white p-4 rounded-2xl shadow mb-4">
+      <input id="namaBarang" placeholder="Nama barang" class="border p-2 rounded w-full mb-2" />
+      <input id="stokBarang" type="number" placeholder="Stok" class="border p-2 rounded w-full mb-2" />
+      <button onclick="tambahBarang()" class="bg-blue-500 text-white px-4 py-2 rounded">Tambah</button>
+    </div>
+    <ul id="listBarang" class="space-y-2"></ul>
+  </div>
+
+  <!-- Transaksi -->
+  <div id="transaksi" class="hidden">
+    <h2 class="text-2xl font-bold mb-4">Transaksi</h2>
+    <div class="bg-white p-4 rounded-2xl shadow">
+      <input id="jumlah" type="number" placeholder="Jumlah" class="border p-2 rounded w-full mb-2" />
+      <select id="tipe" class="border p-2 rounded w-full mb-2">
+        <option value="masuk">Pemasukan</option>
+        <option value="keluar">Pengeluaran</option>
+      </select>
+      <button onclick="tambahTransaksi()" class="bg-green-500 text-white px-4 py-2 rounded">Simpan</button>
+    </div>
+  </div>
+</main>
+
+  </div>  <script>
+    let barang = [];
+    let income = 0;
+    let expense = 0;
+
+    function showPage(page) {
+      document.getElementById('dashboard').classList.add('hidden');
+      document.getElementById('barang').classList.add('hidden');
+      document.getElementById('transaksi').classList.add('hidden');
+      document.getElementById(page).classList.remove('hidden');
+    }
+
+    function tambahBarang() {
+      const nama = document.getElementById('namaBarang').value;
+      const stok = parseInt(document.getElementById('stokBarang').value);
+      if (!nama || !stok) return;
+
+      barang.push({ nama, stok });
+      renderBarang();
+      updateStock();
+    }
+
+    function renderBarang() {
+      const list = document.getElementById('listBarang');
+      list.innerHTML = '';
+      barang.forEach((b) => {
+        const li = document.createElement('li');
+        li.className = 'bg-white p-3 rounded shadow';
+        li.innerText = b.nama + ' - Stok: ' + b.stok;
+        list.appendChild(li);
+      });
+    }
+
+    function tambahTransaksi() {
+      const jumlah = parseInt(document.getElementById('jumlah').value);
+      const tipe = document.getElementById('tipe').value;
+
+      if (tipe === 'masuk') {
+        income += jumlah;
+      } else {
+        expense += jumlah;
+      }
+
+      document.getElementById('income').innerText = income;
+      document.getElementById('expense').innerText = expense;
+    }
+
+    function updateStock() {
+      let total = barang.reduce((sum, b) => sum + b.stok, 0);
+      document.getElementById('stock').innerText = total;
+    }
+  </script></body>
+</html>
